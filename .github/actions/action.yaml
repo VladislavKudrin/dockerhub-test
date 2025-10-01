@@ -26,11 +26,3 @@ runs:
           file: ./Dockerfile
           tags: vladikudrya/test-dockerhub:${{ inputs.tag }}
           push: true
-      # - name: Test - Build and push Docker env image
-      #   uses: docker/build-push-action@v4
-      #   if: ${{ inputs.isRelease == 'true' }}
-      #   with:
-      #     context: .
-      #     file: ./api/Dockerfile
-      #     tags: vladikudrya/test-dockerhub:latest
-      #     push: true

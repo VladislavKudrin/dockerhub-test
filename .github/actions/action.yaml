@@ -23,7 +23,7 @@ runs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./api/Dockerfile
+          file: ./Dockerfile
           tags: vladikudrya/test-dockerhub:${{ inputs.tag }}
           push: true
       # - name: Test - Build and push Docker env image

@@ -9,6 +9,13 @@ inputs:
     description: Is this a release build? If true, the latest tag will be applied
     required: false
     default: false
+  node_version_key:
+    required: false
+    default: NODE_VERSION
+  api_version_key:
+    required: false
+    default: API_VERSION
+
 secrets:
   DOCKERHUB_USERNAME:
     description: Docker Hub username
@@ -19,10 +26,56 @@ secrets:
 runs:
     using: composite
     steps:
-      - name: Test - Build and push Docker ${{ inputs.tag }} image
+      - name: Read version from .env
+        id: envver
+        shell: bash
+        run: |
+          NODE_KEY='${{ inputs.node_version_key }}'
+          API_KEY='${{ inputs.api_version_key }}'
+          if [[ ! -f .env ]]; then
+           echo ".env not found"
+           exit 0
+          fi
+
+          get_val() {
+           local key="$1"
+           grep -E "^${key}=" .env | head -1 | cut -d= -f2- | tr -d '\r'
+          }
+
+          NODE_VAL="$(get_val "$NODE_KEY")"
+          API_VAL="$(get_val "$API_KEY")"
+
+        
+          if [[ -n "$NODE_VAL" ]]; then
+            echo "node_version=$NODE_VAL" >> "$GITHUB_OUTPUT"
+          else
+            echo "No value for $NODE_KEY in .env"
+          fi
+
+          if [[ -n "$API_VAL" ]]; then
+            echo "api_version=$API_VAL" >> "$GITHUB_OUTPUT"
+          else
+            echo "No value for $API_KEY in .env"
+          fi
+
+      - name: Test - Build and push Docker RELEASE ${{ inputs.tag }} image
         uses: docker/build-push-action@v4
         with:
           context: .
           file: ./Dockerfile
           tags: vladikudrya/test-dockerhub:${{ inputs.tag }}
+          push: true
+      - name: Test - Build and push Docker NODE ${{ inputs.tag }} image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: vladikudrya/test-dockerhub:${{ steps.envver.outputs.node_version }}
+          push: true
+      - name: Test - Build and push Docker API ${{ inputs.tag }} image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: vladikudrya/test-dockerhub:${{ steps.envver.outputs.api_version }}
           push: true
